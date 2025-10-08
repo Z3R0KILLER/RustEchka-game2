@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛠️ RustEchka - Одиночная версия</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: #0f1b2b; 
+            color: white; 
+            font-family: Arial;
+            overflow: hidden;
+        }
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        #gameCanvas {
+            display: block;
+            background: #1e2b3e;
+            cursor: pointer;
+        }
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.8);
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #ff6b35;
+        }
+        h1 { color: #ff6b35; margin-bottom: 10px; }
+        .resource { 
+            display: flex; 
+            gap: 10px; 
+            margin: 10px 0;
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        <div id="ui">
+            <h1>🛠️ RustEchka</h1>
+            <div class="resource">🌳 Дерево: <span id="wood">0</span></div>
+            <div class="resource">⛰️ Камень: <span id="stone">0</span></div>
+            <p>💡 Кликай по деревьям и камням!</p>
+        </div>
+    </div>
+
+    <script>
+        class SimpleRustEchka {
+            constructor() {
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.setupCanvas();
+                
+                this.player = { x: 400, y: 300, wood: 0, stone: 0 };
+                this.resources = {
+                    trees: [
+                        { x: 200, y: 150, wood: 5 },
+                        { x: 400, y: 300, wood: 5 },
+                        { x: 600, y: 200, wood: 5 }
+                    ],
+                    stones: [
+                        { x: 250, y: 350, stone: 3 },
+                        { x: 450, y: 250, stone: 3 }
+                    ]
+                };
+                
+                this.setupControls();
+                this.gameLoop();
+            }
+
+            setupCanvas() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            }
+
+            setupControls() {
+                this.canvas.addEventListener('click', (e) => {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    this.handleClick(x, y);
+                });
+            }
+
+            handleClick(x, y) {
+                // Проверяем деревья
+                for (let tree of this.resources.trees) {
+                    const dist = Math.sqrt((tree.x - x) ** 2 + (tree.y - y) ** 2);
+                    if (dist < 30 && tree.wood > 0) {
+                        tree.wood--;
+                        this.player.wood++;
+                        this.updateUI();
+                        return;
+                    }
+                }
+                
+                // Проверяем камни
+                for (let stone of this.resources.stones) {
+                    const dist = Math.sqrt((stone.x - x) ** 2 + (stone.y - y) ** 2);
+                    if (dist < 25 && stone.stone > 0) {
+                        stone.stone--;
+                        this.player.stone++;
+                        this.updateUI();
+                        return;
+                    }
+                }
+                
+                // Двигаем игрока
+                this.player.x = x;
+                this.player.y = y;
+            }
+
+            updateUI() {
+                document.getElementById('wood').textContent = this.player.wood;
+                document.getElementById('stone').textContent = this.player.stone;
+            }
+
+            render() {
+                // Очистка
+                this.ctx.fillStyle = '#1e2b3e';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Деревья
+                this.ctx.fillStyle = '#2a5934';
+                this.resources.trees.forEach(tree => {
+                    if (tree.wood > 0) {
+                        this.ctx.beginPath();
+                        this.ctx.arc(tree.x, tree.y, 25, 0, Math.PI * 2);
+                        this.ctx.fill();
+                        this.ctx.fillStyle = 'white';
+                        this.ctx.font = '12px Arial';
+                        this.ctx.textAlign = 'center';
+                        this.ctx.fillText(tree.wood, tree.x, tree.y + 35);
+                        this.ctx.fillStyle = '#2a5934';
+                    }
+                });
+                
+                // Камни
+                this.ctx.fillStyle = '#5a6268';
+                this.resources.stones.forEach(stone => {
+                    if (stone.stone > 0) {
+                        this.ctx.beginPath();
+                        this.ctx.arc(stone.x, stone.y, 20, 0, Math.PI * 2);
+                        this.ctx.fill();
+                        this.ctx.fillStyle = 'white';
+                        this.ctx.font = '12px Arial';
+                        this.ctx.textAlign = 'center';
+                        this.ctx.fillText(stone.stone, stone.x, stone.y + 35);
+                        this.ctx.fillStyle = '#5a6268';
+                    }
+                });
+                
+                // Игрок
+                this.ctx.fillStyle = '#ff6b35';
+                this.ctx.beginPath();
+                this.ctx.arc(this.player.x, this.player.y, 20, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.strokeStyle = 'white';
+                this.ctx.lineWidth = 3;
+                this.ctx.stroke();
+            }
+
+            gameLoop() {
+                this.render();
+                requestAnimationFrame(() => this.gameLoop());
+            }
+        }
+
+        // Запуск
+        window.addEventListener('load', () => {
+            new SimpleRustEchka();
+        });
+    </script>
+</body>
+</html>
